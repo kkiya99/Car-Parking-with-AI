@@ -127,8 +127,12 @@ class Actor(object):
             and input later
         """
         input_layer = Input(shape=[self._state_size])
-        layer = Dense(self._hidden[0], activation='relu')(input_layer)
-        layer = Dense(self._hidden[1], activation='relu')(layer)
+        layer = Dense(512, activation='relu')(input_layer)
+        layer = Dense(256, activation='relu')(layer)
+        layer = Dense(128, activation='relu')(layer)
+        layer = Dense(64, activation='relu')(layer)
+        layer = Dense(32, activation='relu')(layer)
+        layer = Dense(16, activation='relu')(layer)
         output_layer = Dense(self._action_size, activation='sigmoid')(layer)
         model = Model(input=input_layer, output=output_layer)
         return model, model.trainable_weights, input_layer
