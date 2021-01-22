@@ -4,9 +4,6 @@ DDPG: Deep Deterministic Policy Gradients
 A clean python implementation of an Agent for Reinforcement Learning with Continuous Control using Deep 
 Deterministic Policy Gradients.
 
-![](https://github.com/rmst/ddpg/raw/master/readme/ipend.gif?raw=true ) ![](https://github.com/rmst/ddpg/raw/master/readme/reacher.gif?raw=true) ![](https://github.com/rmst/ddpg/raw/master/readme/pend.gif?raw=true)
-[![DDPG on TORCS](http://img.youtube.com/vi/Tb5gASEJIRM/0.jpg)](http://www.youtube.com/watch?v=Tb5gASEJIRM "Video Title")
-
 # Overview:
 
 DDPG is a reinforcement learning algorithm that uses deep neural networks to approximate policy and value functions. If you are interested in how the algorithm works in detail, you can read the original DDPG paper here
