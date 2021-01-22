@@ -4,16 +4,18 @@ import json
 '''
         0 - ileri git   
         1 - geri git
-        2 - tekeri + 15 derece
-        3 - tekeri - 15 derece
+        2 - tekeri + 5 derece
+        3 - tekeri - 5 derece
         4 - dur
 '''
 class Env:
     def __init__(self,timestep = 0, maxtimestep = 1000):
         self.state = queue.Queue(maxsize=1) 
         self.action = queue.Queue(maxsize=1)
-        global state_q = self.action
-        global action_q = self.state
+        global state_q
+        state_q = self.action
+        global action_q
+        action_q = self.state
         self.timestep = timestep
         self.maxtimestep = maxtimestep
         self.action_size = 6 # 
