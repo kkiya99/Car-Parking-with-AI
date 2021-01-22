@@ -1,6 +1,6 @@
 from ddpg import DDPG as Agent
 from Environment import Env
-
+import threading
 def loop(agent, env):
     try:
         state = env.get_state()
@@ -19,6 +19,9 @@ def main():
     threading.Thread(target=env.POST_API, daemon=True).start()
     while True:
         loop(agent, env)
+
+if __name__ == "__main__":
+    main()
 
 
 # GET_API

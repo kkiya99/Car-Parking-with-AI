@@ -24,6 +24,7 @@ class Env:
         self.carpisma = False
         self.win = False
 
+        self.episode_reward = 0
     def GET_API(self):
         while True:
             if len(self.state_size) == 0:
@@ -32,11 +33,13 @@ class Env:
                 data = _r.json()
                 _state = data['Sensors'] + data['Relative']
                 _state.append(data['Angle'])
+                print('State: ',_state)
                 self.state.put(_state)
 
     def POST_API(self):
         while True:
             action = self.action.get()
+            print('Action: ',action)
             requests.post(url = "http://localhost:8084/api/Action/SetAction", data = action)
 
     def get_state(self):
@@ -45,6 +48,7 @@ class Env:
 
     def act(self,action,state):
         done = self.isDone(state)
+        if done == True:self.save_reward_per_episode()
         reward = self.Reward(action,state)
 
         action = {'ActionNumber' : action,'Reset':done}
@@ -57,6 +61,7 @@ class Env:
         reward = -0.1
         if self.carpisma == True: reward += -100
         if self.win == True: reward += 100
+        self.episode_reward += reward
         return reward
 
 
@@ -74,6 +79,10 @@ class Env:
         if -0.5 <= state[8] <= 0.5 and -0.5 <= state[9] <= 0.5:
             self.win = True
             return True
-
         return False
 
+    def save_reward_per_episode(self):
+        _file = open('RPE.txt', 'a+')
+        episode_reward = str(self.episode_reward)
+        _file.write(episode_reward)
+        _file.close()
