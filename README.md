@@ -1,52 +1,32 @@
-DDPG: Deep Deterministic Policy Gradients
-=========================================
+# PPO-PyTorch
+Minimal PyTorch implementation of Proximal Policy Optimization with clipped objective for OpenAI gym environments.
 
-A clean python implementation of an Agent for Reinforcement Learning with Continuous Control using Deep 
-Deterministic Policy Gradients.
+## Usage
 
-# Overview:
+- To test a preTrained network : run `test.py` or `test_continuous.py`
+- To train a new network : run `PPO.py` or `PPO_continuous.py`
+- All the hyperparameters are in the `PPO.py` or `PPO_continuous.py` file
+- If you are trying to train it on a environment where action dimension = 1, make sure to check the tensor dimensions in the update function of PPO class, since I have used `torch.squeeze()` quite a few times. `torch.squeeze()` squeezes the tensor such that there are no dimensions of length = 1 ([more info](https://pytorch.org/docs/stable/torch.html?highlight=torch%20squeeze#torch.squeeze)).
+- Number of actors for collecting experience = 1. This could be changed by creating multiple instances of ActorCritic networks in the PPO class and using them to collect experience (like A3C and standard PPO).
 
-DDPG is a reinforcement learning algorithm that uses deep neural networks to approximate policy and value functions. If you are interested in how the algorithm works in detail, you can read the original DDPG paper here
+## Dependencies
+Trained and tested on:
+```
+Python 3.6
+PyTorch 1.0
+NumPy 1.15.3
+gym 0.10.8
+Pillow 5.3.0
+```
 
-[Continuous control with deep reinforcement learning](https://arxiv.org/pdf/1509.02971v5.pdf)
+## Results
 
-The algorithm consists of two networks, an Actor and a Critic network, which approximate the policy and value functions of a reinforcement learning problem.
+PPO Discrete LunarLander-v2 (1200 episodes)           |  PPO Continuous BipedalWalker-v2 (4000 episodes)
+:-------------------------:|:-------------------------:
+![](https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/gif/PPO_LunarLander-v2.gif) |  ![](https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/gif/PPO_BipedalWalker-v2.gif)
 
-The name DDPG, or Deep Deterministic Policy Gradients, refers to how the networks are trained. The value function is trained with normal error and backpropagation, while the Actor network is trained with gradients found from the critic network. You can read the fascinating original paper on deterministic policy gradients here.
 
-[Deterministic Policy Gradient Algorithms](http://www.jmlr.org/proceedings/papers/v32/silver14.pdf)
+## References
 
-The DDPG algorithm is useful because, in very few lines of code (this project is approximately 150 lines excluding comments), you can learn a control algorithm for many different agents, including ones with complex configurations, continuous actions, and high dimensional state spaces (e.g. image data).
-Even better, the same code can be used to train a humanoid robot, a drone, or a car, or any robotic configuration you can think of, Making this project highly reusable.
-
-## Actor Network
-
-The actor network approximates the policy function:
-
-A(s) -> a
-
-where s represents a state, and a represents an action.
-
-## Critic Network
-
-The critic network approximates the value function:
-
-C(s, a) -> q
-
-where s represents a state, a represents an action, and q represents the 
-value of the given state action pair.
-
-# Future:
-Some ideas for future improvements are as follows:
-
-* Support for convolutional neural networks in order to support high dimensional states (such as pixels from camera input)
-* Support for Recurrent Networks for input data
-
-Let me know of any other ideas you may have :)
-
-# Thanks to:
-
-This project is inspired by 
-* The paper [Continuous control with deep reinforcement learning](https://arxiv.org/pdf/1509.02971v5.pdf) by Lillicrap et al.
-* This python implementation, [DDPG](https://github.com/rmst/ddpg)
-* Also Ben Lau's Article on [Using Keras and Deep Deterministic Policy Gradient to play TORCS](https://yanpanlau.github.io/2016/10/11/Torcs-Keras.html)
+- PPO [paper](https://arxiv.org/abs/1707.06347)
+- [OpenAI Spinning up](https://spinningup.openai.com/en/latest/)

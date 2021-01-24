@@ -1,6 +1,7 @@
 import queue
 import requests
 import json
+import numpy as np
 '''
         0 - ileri git   
         1 - geri git
@@ -25,35 +26,42 @@ class Env:
         self.win = False
 
         self.episode_reward = 0
-    def GET_API(self):
-        while True:
-            if len(self.state_size) == 0:
-                #{"Sensors":[6,38,7,2,2,1,1,2],"Relative":[10,1],"Angle":-15}
-                _r = requests.get("http://localhost:8084/api/State/GetState")
-                data = _r.json()
-                _state = data['Sensors'] + data['Relative']
-                _state.append(data['Angle'])
-                print('State: ',_state)
-                self.state.put(_state)
+    # def GET_API(self):
 
-    def POST_API(self):
-        while True:
-            action = self.action.get()
-            print('Action: ',action)
-            requests.post(url = "http://localhost:8084/api/Action/SetAction", data = action)
+    #     #{"Sensors":[6,38,7,2,2,1,1,2],"Relative":[10,1],"Angle":-15}
+    #     _r = requests.get("http://localhost:8084/api/State/GetState")
+    #     data = _r.json()
+    #     _state = data['Sensors'] + data['Relative']
+    #     _state.append(data['Angle'])
+    #     print('State: ',_state)
+    #     return _state
 
-    def get_state(self):
-        state = self.state.get()
-        return state
+    def POST_API(self,action):
 
-    def act(self,action,state):
+        print('Action: ',action)
+        _r = requests.post(url = "http://localhost:8084/api/Action/SetAction", data = action)
+        data = _r.json()
+        _state = data['Sensors'] + data['Relative']
+        _state.append(data['Angle'])
+        print('State: ',_state)
+        return np.array(_state)
+
+    def reset(self):
+        output = requests.post(url = "http://localhost:8084/api/reset", data = {'asd':'asd'})
+        data = output.json()
+        _state = data['Sensors'] + data['Relative']
+        _state.append(data['Angle'])
+        print('State: ',_state)
+        return np.array(_state)
+
+    def step(self,action,state):
         done = self.isDone(state)
         if done == True:self.save_reward_per_episode()
         reward = self.Reward(action,state)
 
         action = {'ActionNumber' : action,'Reset':done}
-        self.action.put(action)
-        next_state = state
+        next_state = self.POST_API(action)
+
         return next_state, reward, done
         
         
