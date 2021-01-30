@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
-from Environment import Env
+import time
+from numpy import savetxt
+import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+global stateq, actionq, resetq
 class Memory:
     def __init__(self):
         self.actions = []
@@ -11,7 +13,8 @@ class Memory:
         self.logprobs = []
         self.rewards = []
         self.is_terminals = []
-    
+        self.actor_loss_values = [ ]
+        self.critic_loss_values = [ ]
     def clear_memory(self):
         del self.actions[:]
         del self.states[:]
@@ -26,9 +29,9 @@ class ActorCritic(nn.Module):
         # actor
         self.action_layer = nn.Sequential(
                 nn.Linear(state_dim, n_latent_var),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(n_latent_var, n_latent_var),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(n_latent_var, action_dim),
                 nn.Softmax(dim=-1)
                 )
@@ -36,9 +39,9 @@ class ActorCritic(nn.Module):
         # critic
         self.value_layer = nn.Sequential(
                 nn.Linear(state_dim, n_latent_var),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(n_latent_var, n_latent_var),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Linear(n_latent_var, 1)
                 )
         
@@ -124,21 +127,21 @@ class PPO:
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
         
-def main():
+def main(stateq, actionq, resetq):
     ############## Hyperparameters ##############
 
-
+    
     # creating environment
-    env = Env()
-    state_dim = 11
-    action_dim = 5
 
-    solved_reward = 100         # stop training if avg_reward > solved_reward
-    log_interval = 20           # print avg reward in the interval
-    max_episodes = 1000        # max training episodes
-    max_timesteps = 25000        # max timesteps in one episode
+    state_dim = 4
+    action_dim = 4
+
+    solved_reward = 300         # stop training if avg_reward > solved_reward
+    log_interval = 50         # print avg reward in the interval
+    max_episodes = 5000        # max training episodes
+    max_timesteps = 400        # max timesteps in one episode
     n_latent_var = 64           # number of variables in hidden layer
-    update_timestep = 1000      # update policy every n timesteps
+    update_timestep = 200      # update policy every n timesteps
     lr = 0.002
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
@@ -160,16 +163,20 @@ def main():
     running_reward = 0
     avg_length = 0
     timestep = 0
-    
+    episode_reward_list = [ ]
     # training loop
     for i_episode in range(1, max_episodes+1):
-        state = env.reset()
+        resetq.put(1)
+        state, reward, done = stateq.get()
+        episode_reward = 0
         for t in range(max_timesteps):
             timestep += 1
             
             # Running policy_old:
             action = ppo.policy_old.act(state, memory)
-            state, reward, done = env.step(action,state)
+            #print("Action: ",action)
+            actionq.put(action)
+            state, reward, done = stateq.get()
             
             # Saving reward and is_terminal:
             memory.rewards.append(reward)
@@ -182,12 +189,12 @@ def main():
                 timestep = 0
             
             running_reward += reward
-
-            if done:
+            episode_reward += reward
+            if done:   
                 break
                 
         avg_length += t
-        
+        episode_reward_list.append(episode_reward)
         # stop training if avg_reward > solved_reward
         if running_reward > (log_interval*solved_reward):
             print("########## Solved! ##########")
@@ -203,6 +210,5 @@ def main():
             running_reward = 0
             avg_length = 0
             
-if __name__ == '__main__':
-    main()
+    savetxt('reward_list.csv', np.array(episode_reward_list), delimiter=',')
     
