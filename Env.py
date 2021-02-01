@@ -6,11 +6,16 @@ import requests
 ## http://localhost:8084/api/State/GetState -> GET
 ## data = {"Sensors":[6.09172,37.62426,18.4938183,2.772441,3.32898784,2.41854715,2.77090549,2.22815466],"Relative":[9.956783,1.46001768],"Angle":0.0}
 ## data = {'ActionNumber':2}
+#tensorboard --logdir=runs
 
 class UnityEnv:
+    def __init__(self):
+        self.state_backup = None
     def PostAction(self,action):
+        angle = self.state_backup['Angle']
+        if (action == 2 and angle == 60) or (action == 3 and angle == -60):
+            action = 4
         data = {'ActionNumber':action}
-  
         time.sleep(0.01)
         r = requests.post(url = "http://localhost:8084/api/Action/SetAction", data = data)
         while r.status_code == 404:
@@ -35,6 +40,7 @@ class UnityEnv:
                     continue
             else:
                 continue
+        self.state_backup = data
         state = self.Normalize(data)
         reward = self.calcReward(data)
         done = self.isDone(data)

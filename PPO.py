@@ -6,7 +6,12 @@ from numpy import savetxt
 import numpy as np
 from Env import UnityEnv
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-global stateq, actionq, resetq
+print(torch.cuda.get_device_name(0))
+## pip install tensorboard
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter()
+
+##
 class Memory:
     def __init__(self):
         self.actions = []
@@ -86,6 +91,8 @@ class PPO:
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
+
+        self.update_time_for_tensorboard = 0
     
     def update(self, memory):   
         # Monte Carlo estimate of state rewards:
@@ -105,13 +112,15 @@ class PPO:
         old_states = torch.stack(memory.states).to(device).detach()
         old_actions = torch.stack(memory.actions).to(device).detach()
         old_logprobs = torch.stack(memory.logprobs).to(device).detach()
+
         
         # Optimize policy for K epochs:
         for _ in range(self.K_epochs):
+            
             # Evaluating old actions and values :
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
             
-            # Finding the ratio (pi_theta / pi_theta__old):
+            # Finding the ratio (pi_theta / pi_theta__old): araştırcam
             ratios = torch.exp(logprobs - old_logprobs.detach())
                 
             # Finding Surrogate Loss:
@@ -124,9 +133,11 @@ class PPO:
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-        
+        self.update_time_for_tensorboard += 1
+        writer.add_scalar("Loss/train", self.MseLoss(state_values, rewards) , self.update_time_for_tensorboard)
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
+        writer.flush()
         
 def main(env):
     ############## Hyperparameters ##############
@@ -137,19 +148,19 @@ def main(env):
     state_dim = 11
     action_dim = 5
 
-    solved_reward = 650         # stop training if avg_reward > solved_reward
-    log_interval = 50         # print avg reward in the interval
+    solved_reward = 93         # stop training if avg_reward > solved_reward
+    log_interval = 100        # print avg reward in the interval
     max_episodes = 5000        # max training episodes
-    max_timesteps = 500        # max timesteps in one episode
+    max_timesteps = 75        # max timesteps in one episode
     n_latent_var = 128           # number of variables in hidden layer
-    update_timestep = 400      # update policy every n timesteps
+    update_timestep = 150      # update policy every n timesteps
     lr = 0.002
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
     K_epochs = 4                # update policy for K epochs
     eps_clip = 0.2              # clip parameter for PPO
     random_seed = None
-    outputlog_interval = 10
+    outputlog_interval = 99
     #############################################
     
     if random_seed:
@@ -168,15 +179,15 @@ def main(env):
     # training loop
     for i_episode in range(1, max_episodes+1):
         env.ResetUnity()
-
+        state, _ , _ = env.GetState()
         episode_reward = 0
         for t in range(max_timesteps):
-            state, reward, done = env.GetState()
             timestep += 1
             
             # Running policy_old:
             action = ppo.policy_old.act(state, memory)
             env.PostAction(action)
+            state, reward, done = env.GetState()
             #state, reward, done = env.GetState()
             #print("State: ", state, "\n>>> Action: ",action)
             
@@ -194,8 +205,10 @@ def main(env):
             episode_reward += reward
             if done:   
                 break
-        #print('Episode: ',i_episode,' Reward: ',episode_reward)
+        print('Episode: ',i_episode,' Reward: ',episode_reward)
         avg_length += t
+        writer.add_scalar("Reward/Episode", episode_reward,  i_episode)
+        writer.flush()
         episode_reward_list.append(episode_reward)
         # stop training if avg_reward > solved_reward
         if running_reward > (log_interval*solved_reward):
@@ -211,9 +224,10 @@ def main(env):
             #print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
-            
+    writer.close()
     savetxt('reward_list.csv', np.array(episode_reward_list), delimiter=',')
-    
+
 if __name__ == '__main__':
     env = UnityEnv()
     main(env)
+    
