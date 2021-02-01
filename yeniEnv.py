@@ -4,7 +4,11 @@ import numpy as np
 import threading
 from PPO import main
 pygame.init()
-
+## http://localhost:8084/api/ResetState/SetResetState -> POST 
+## http://localhost:8084/api/Action/SetAction -> POST
+## http://localhost:8084/api/State/GetState -> GET
+## data = {"Sensors":[6.09172,37.62426,18.4938183,2.772441,3.32898784,2.41854715,2.77090549,2.22815466],"Relative":[9.956783,1.46001768],"Angle":0.0}
+## data = {'ActionNumber':2}
 # Window Information
 displayw = 800
 displayh = 800

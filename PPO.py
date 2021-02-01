@@ -4,6 +4,7 @@ from torch.distributions import Categorical
 import time
 from numpy import savetxt
 import numpy as np
+from Env import UnityEnv
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 global stateq, actionq, resetq
 class Memory:
@@ -127,21 +128,21 @@ class PPO:
         # Copy new weights into old policy:
         self.policy_old.load_state_dict(self.policy.state_dict())
         
-def main(stateq, actionq, resetq):
+def main(env):
     ############## Hyperparameters ##############
 
     
     # creating environment
 
-    state_dim = 4
-    action_dim = 4
+    state_dim = 11
+    action_dim = 5
 
     solved_reward = 300         # stop training if avg_reward > solved_reward
     log_interval = 50         # print avg reward in the interval
     max_episodes = 5000        # max training episodes
-    max_timesteps = 400        # max timesteps in one episode
-    n_latent_var = 64           # number of variables in hidden layer
-    update_timestep = 200      # update policy every n timesteps
+    max_timesteps = 500        # max timesteps in one episode
+    n_latent_var = 128           # number of variables in hidden layer
+    update_timestep = 400      # update policy every n timesteps
     lr = 0.002
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
@@ -157,7 +158,7 @@ def main(stateq, actionq, resetq):
     
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
-    print(lr,betas)
+    #print(lr,betas)
     
     # logging variables
     running_reward = 0
@@ -166,17 +167,18 @@ def main(stateq, actionq, resetq):
     episode_reward_list = [ ]
     # training loop
     for i_episode in range(1, max_episodes+1):
-        resetq.put(1)
-        state, reward, done = stateq.get()
+        env.ResetUnity()
+
         episode_reward = 0
         for t in range(max_timesteps):
+            state, reward, done = env.GetState()
             timestep += 1
             
             # Running policy_old:
             action = ppo.policy_old.act(state, memory)
-            #print("Action: ",action)
-            actionq.put(action)
-            state, reward, done = stateq.get()
+            env.PostAction(action)
+            #state, reward, done = env.GetState()
+            #print("State: ", state, "\n>>> Action: ",action)
             
             # Saving reward and is_terminal:
             memory.rewards.append(reward)
@@ -192,12 +194,12 @@ def main(stateq, actionq, resetq):
             episode_reward += reward
             if done:   
                 break
-                
+        #print('Episode: ',i_episode,' Reward: ',episode_reward)
         avg_length += t
         episode_reward_list.append(episode_reward)
         # stop training if avg_reward > solved_reward
         if running_reward > (log_interval*solved_reward):
-            print("########## Solved! ##########")
+            #print("########## Solved! ##########")
             torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format('bitirmeindep'))
             break
             
@@ -206,9 +208,12 @@ def main(stateq, actionq, resetq):
             avg_length = int(avg_length/log_interval)
             running_reward = int((running_reward/log_interval))
             
-            print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
+            #print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
             
     savetxt('reward_list.csv', np.array(episode_reward_list), delimiter=',')
     
+if __name__ == '__main__':
+    env = UnityEnv()
+    main(env)
