@@ -137,7 +137,7 @@ def main(env):
     state_dim = 11
     action_dim = 5
 
-    solved_reward = 700         # stop training if avg_reward > solved_reward
+    solved_reward = 650         # stop training if avg_reward > solved_reward
     log_interval = 50         # print avg reward in the interval
     max_episodes = 5000        # max training episodes
     max_timesteps = 500        # max timesteps in one episode
