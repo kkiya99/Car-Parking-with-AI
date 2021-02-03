@@ -61,6 +61,10 @@ class UnityEnv:
         for i in state['Sensors']:
             if i < 0.5:
                 reward -= 10
+        relative_x=state['Relative'][0]
+        relative_y=state['Relative'][1]
+        reward -= relative_x/100
+        reward -= relative_y/100
         return reward
         
 
