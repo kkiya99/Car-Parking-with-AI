@@ -6,10 +6,10 @@ def test(stateq, actionq, resetq):
     ############## Hyperparameters ##############
     # creating environment
 
-    state_dim = 4
-    action_dim = 4
+    state_dim = 11
+    action_dim = 5
 
-    n_latent_var = 64           # number of variables in hidden layer
+    n_latent_var = 128           # number of variables in hidden layer
     lr = 0.0007
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
@@ -18,7 +18,7 @@ def test(stateq, actionq, resetq):
     #############################################
 
     n_episodes = 15
-    max_timesteps = 3000
+    max_timesteps = 75
 
 
     filename = "PPO_{}.pth".format('bitirmeindep')
@@ -30,13 +30,13 @@ def test(stateq, actionq, resetq):
     ppo.policy_old.load_state_dict(torch.load(directory+filename))
     
     for ep in range(1, n_episodes+1):
-        ep_reward = 0
-        resetq.put(1)
-        state, reward, done = stateq.get()
+        env.ResetUnity()
+        state, _ , _ = env.GetState()
+        episode_reward = 0
         for t in range(max_timesteps):
             action = ppo.policy_old.act(state, memory)
-            actionq.put(action)
-            state, reward, done = stateq.get()
+            env.PostAction(action)
+            state, reward, done = env.GetState()
             ep_reward += reward
  
             if done:
