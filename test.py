@@ -1,8 +1,8 @@
 from PPO import PPO, Memory
 from PIL import Image
 import torch
-
-def test(stateq, actionq, resetq):
+from Env import UnityEnv
+def test(env):
     ############## Hyperparameters ##############
     # creating environment
 
@@ -45,7 +45,9 @@ def test(stateq, actionq, resetq):
         print('Episode: {}\tReward: {}'.format(ep, int(ep_reward)))
         ep_reward = 0
 
-    
+if __name__ = '__main__':
+    env = UnityEnv()
+    test(env)
 
     
     
